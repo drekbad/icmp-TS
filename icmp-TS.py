@@ -5,7 +5,7 @@ from datetime import timedelta
 
 # ANSI color codes
 GREEN = "\033[92m"
-BLUE = "\033[94m"
+YELLOW = "\033[93m"
 RESET = "\033[0m"
 
 def expand_targets(ip=None, ip_list=None):
@@ -51,11 +51,11 @@ def test_icmp_timestamp(target, verbose=False):
             print(reply.summary())
             reply.show()
         else:
-            print(f"{GREEN}[{target}]{RESET} dst={ip_layer.dst} ttl={ip_layer.ttl}")
+            print(f"[{GREEN}{target}{RESET}] dst={ip_layer.dst}")
             print(f"           ICMP type={icmp_layer.type} (timestamp-reply)")
-            print(f"           ts_ori={BLUE}{ts_ori} UTC{RESET}  "
-                  f"ts_rx={BLUE}{ts_rx} UTC{RESET}  "
-                  f"ts_tx={BLUE}{ts_tx} UTC{RESET}")
+            print(f"           ts_ori={YELLOW}{ts_ori} UTC{RESET}  "
+                  f"ts_rx={YELLOW}{ts_rx} UTC{RESET}  "
+                  f"ts_tx={YELLOW}{ts_tx} UTC{RESET}")
     else:
         print(f"{GREEN}[{target}]{RESET} No ICMP timestamp reply or request blocked.")
 
