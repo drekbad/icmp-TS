@@ -3,6 +3,11 @@ import argparse
 from scapy.all import IP, ICMP, sr1, conf
 from datetime import timedelta
 
+# ANSI color codes
+GREEN = "\033[92m"
+BLUE = "\033[94m"
+RESET = "\033[0m"
+
 def expand_targets(ip=None, ip_list=None):
     targets = set()
     if ip:
@@ -28,7 +33,7 @@ def expand_targets(ip=None, ip_list=None):
     return list(targets)
 
 def format_time(ms):
-    return str(timedelta(milliseconds=ms))
+    return str(timedelta(milliseconds=ms)).rstrip('0').rstrip('.')  # Clean trailing zeros
 
 def test_icmp_timestamp(target, verbose=False):
     pkt = IP(dst=target)/ICMP(type=13)
@@ -38,31 +43,28 @@ def test_icmp_timestamp(target, verbose=False):
         ip_layer = reply[IP]
         icmp_layer = reply[ICMP]
 
-        output = {
-            'proto': ip_layer.proto,
-            'sec': ip_layer.ttl,
-            'dst': ip_layer.dst,
-            'type': icmp_layer.type,
-            'ts_ori': format_time(icmp_layer.ts_ori),
-            'ts_rx': format_time(icmp_layer.ts_rx),
-            'ts_tx': format_time(icmp_layer.ts_tx),
-        }
+        ts_ori = format_time(icmp_layer.ts_ori)
+        ts_rx = format_time(icmp_layer.ts_rx)
+        ts_tx = format_time(icmp_layer.ts_tx)
 
         if verbose:
             print(reply.summary())
             reply.show()
         else:
-            print(f"[{target}] proto={output['proto']} ttl={output['sec']} dst={output['dst']}")
-            print(f"           ICMP type={output['type']} ts_ori={output['ts_ori']} ts_rx={output['ts_rx']} ts_tx={output['ts_tx']}")
+            print(f"{GREEN}[{target}]{RESET} dst={ip_layer.dst} ttl={ip_layer.ttl}")
+            print(f"           ICMP type={icmp_layer.type} (timestamp-reply)")
+            print(f"           ts_ori={BLUE}{ts_ori} UTC{RESET}  "
+                  f"ts_rx={BLUE}{ts_rx} UTC{RESET}  "
+                  f"ts_tx={BLUE}{ts_tx} UTC{RESET}")
     else:
-        print(f"[{target}] No ICMP timestamp reply or request blocked.")
+        print(f"{GREEN}[{target}]{RESET} No ICMP timestamp reply or request blocked.")
 
 def main():
     parser = argparse.ArgumentParser(description="ICMP Timestamp Tester")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-i", "--ip", help="Single IP address or CIDR range")
     group.add_argument("-l", "--list", help="File with IPs or CIDR ranges")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output (Scapy .show())")
 
     args = parser.parse_args()
     targets = expand_targets(ip=args.ip, ip_list=args.list)
